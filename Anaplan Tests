@@ -1,0 +1,44 @@
+import getpass
+from anaplan.api import AnaplanAPI
+from anaplan.api.exceptions import AnaplanAPIException
+
+# --- 1. Coleta das Credenciais ---
+print("🔒 Autenticação Anaplan API (Basic Auth)")
+username = input("Insira seu nome de usuário (e-mail) do Anaplan: ")
+# getpass é usado para ocultar a senha digitada no console
+password = getpass.getpass("Insira sua senha do Anaplan (será ocultada): ")
+print("-" * 30)
+
+# --- 2. Inicialização e Conexão ---
+try:
+    # A classe AnaplanAPI gerencia a sessão e autentica automaticamente
+    # usando as credenciais fornecidas.
+    anaplan = AnaplanAPI(
+        username=username,
+        password=password,
+        # Opcional: Adicione o ID do Serviço (Service ID) se estiver usando
+        # um ambiente diferente ou para maior robustez, mas não é obrigatório
+        # para a autenticação básica padrão.
+    )
+
+    # --- 3. Teste de Conexão e Sessão ---
+    # Uma maneira simples de verificar a autenticação é listar os modelos.
+    # Se a chamada for bem-sucedida, a autenticação funcionou.
+    models = anaplan.models.get_models()
+
+    # Se a execução chegar aqui, a conexão foi um sucesso!
+    print("✅ Conexão bem-sucedida!")
+    print(f"Sua sessão Anaplan foi iniciada. Total de modelos acessíveis: {len(models)}")
+
+    # O objeto 'anaplan' está agora pronto para ser usado
+    # para outras operações (Importar, Exportar, etc.)
+
+except AnaplanAPIException as e:
+    # Captura erros comuns da API, como falha de autenticação (código 401)
+    print("❌ Falha na Conexão / Autenticação.")
+    print(f"Detalhe do Erro: {e}")
+    print("Verifique seu nome de usuário e senha.")
+
+except Exception as e:
+    # Captura quaisquer outros erros inesperados
+    print(f"🛑 Ocorreu um erro inesperado: {e}")
