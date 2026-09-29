@@ -1,30 +1,31 @@
 import getpass
-from anaplan.api import AnaplanAPI
-from anaplan.api.exceptions import AnaplanAPIException
+import os
+
+import anaplan_sdk
+from anaplan_sdk.exceptions import AnaplanException, InvalidCredentialsException
 
 # --- 1. Coleta das Credenciais ---
+# Cloud agents can supply ANAPLAN_USERNAME and ANAPLAN_PASSWORD.
+# A local run still prompts when those variables are absent.
 print("🔒 Autenticação Anaplan API (Basic Auth)")
-username = input("Insira seu nome de usuário (e-mail) do Anaplan: ")
-# getpass é usado para ocultar a senha digitada no console
-password = getpass.getpass("Insira sua senha do Anaplan (será ocultada): ")
+username = os.environ.get("ANAPLAN_USERNAME", "").strip()
+password = os.environ.get("ANAPLAN_PASSWORD", "")
+if not username:
+    username = input("Insira seu nome de usuário (e-mail) do Anaplan: ").strip()
+if not password:
+    # getpass é usado para ocultar a senha digitada no console
+    password = getpass.getpass("Insira sua senha do Anaplan (será ocultada): ")
 print("-" * 30)
 
 # --- 2. Inicialização e Conexão ---
 try:
-    # A classe AnaplanAPI gerencia a sessão e autentica automaticamente
-    # usando as credenciais fornecidas.
-    anaplan = AnaplanAPI(
-        username=username,
-        password=password,
-        # Opcional: Adicione o ID do Serviço (Service ID) se estiver usando
-        # um ambiente diferente ou para maior robustez, mas não é obrigatório
-        # para a autenticação básica padrão.
-    )
+    # anaplan-sdk autentica com e-mail e senha e mantém a sessão.
+    anaplan = anaplan_sdk.Client(user_email=username, password=password)
 
     # --- 3. Teste de Conexão e Sessão ---
     # Uma maneira simples de verificar a autenticação é listar os modelos.
     # Se a chamada for bem-sucedida, a autenticação funcionou.
-    models = anaplan.models.get_models()
+    models = anaplan.get_models()
 
     # Se a execução chegar aqui, a conexão foi um sucesso!
     print("✅ Conexão bem-sucedida!")
@@ -33,8 +34,13 @@ try:
     # O objeto 'anaplan' está agora pronto para ser usado
     # para outras operações (Importar, Exportar, etc.)
 
-except AnaplanAPIException as e:
-    # Captura erros comuns da API, como falha de autenticação (código 401)
+except InvalidCredentialsException as e:
+    # Captura falha de autenticação
+    print("❌ Falha na Conexão / Autenticação.")
+    print(f"Detalhe do Erro: {e}")
+    print("Verifique seu nome de usuário e senha.")
+
+except AnaplanException as e:
     print("❌ Falha na Conexão / Autenticação.")
     print(f"Detalhe do Erro: {e}")
     print("Verifique seu nome de usuário e senha.")
